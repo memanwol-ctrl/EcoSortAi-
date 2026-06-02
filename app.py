@@ -196,7 +196,7 @@ with col3:
     if feedback == "No":
         st.error("Thanks! This feedback helps improve the system.")
 
-else:
+    else:
     st.markdown("""
         <div style="text-align:center; padding:40px;">
             <h3>📸 Upload or Capture an Image to Start</h3>

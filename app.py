@@ -197,7 +197,7 @@ with col3:
         st.error("Thanks! This feedback helps improve the system.")
 
     else:
-    st.markdown("""
+        st.markdown("""
         <div style="text-align:center; padding:40px;">
             <h3>📸 Upload or Capture an Image to Start</h3>
             <p style="color:gray;">AI will analyze waste type and suggest recycling steps</p>

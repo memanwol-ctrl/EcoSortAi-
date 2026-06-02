@@ -2,70 +2,38 @@ def get_advice(label, confidence=None):
 
     label = label.lower()
 
-    # ---------------- HIGH CONFIDENCE CHECK ----------------
+    # LOW CONFIDENCE SAFETY CHECK
     if confidence is not None and confidence < 0.5:
-        return (
-            "⚠️ Uncertain detection. Please re-scan with better lighting and a clearer background."
-        )
+        return "⚠️ Low confidence detection. Please retake a clearer image."
 
     # ---------------- PLASTIC ----------------
-    if any(x in label for x in ["plastic bottle", "pet bottle", "water bottle"]):
-        return (
-            "♻️ Rinse thoroughly, remove cap, and recycle in PET (1) bin. "
-            "Do not mix with food waste. Flatten only if required locally."
-        )
+    if "plastic bottle" in label:
+        return "♻️ Rinse bottle, remove cap, recycle in PET bin."
 
     if "plastic cup" in label:
-        return (
-            "⚠️ Most plastic cups are not recyclable unless labeled PP5. "
-            "Check bottom recycling symbol before disposal."
-        )
+        return "⚠️ Plastic cups often NOT recyclable (check PP5 symbol)."
 
     if "plastic" in label:
-        return (
-            "♻️ Plastic detected. Identify resin code (1–7). "
-            "PET and HDPE are recyclable, others often require special handling."
-        )
+        return "♻️ Identify resin code (1–7). PET & HDPE are recyclable."
 
     # ---------------- GLASS ----------------
-    if any(x in label for x in ["glass bottle", "glass jar"]):
-        return (
-            "🍾 Rinse, remove lids, and recycle in glass bin. "
-            "Separate by color if possible (clear, green, brown)."
-        )
+    if "glass bottle" in label or "glass jar" in label:
+        return "🍾 Rinse and recycle in glass bin. Separate by color if possible."
 
     if "glass" in label:
-        return (
-            "⚠️ Glass waste. Handle carefully and avoid mixing with ceramics or mirrors."
-        )
+        return "⚠️ Handle carefully. Do not mix with ceramics."
 
     # ---------------- PAPER ----------------
-    if "cardboard" in label:
-        return (
-            "📦 Flatten cardboard boxes. Keep dry and clean. "
-            "Remove plastic tape before recycling."
-        )
-
-    if "paper" in label:
-        return (
-            "📄 Recycle clean paper only. Avoid wet, oily, or laminated paper."
-        )
+    if "paper" in label or "cardboard" in label:
+        return "📦 Keep dry. Remove tape/plastic before recycling."
 
     # ---------------- ORGANIC ----------------
-    if any(x in label for x in ["food", "fruit", "organic"]):
-        return (
-            "🌱 Compost this waste. If dumped, it produces methane gas in landfills."
-        )
+    if "food" in label or "fruit" in label:
+        return "🌱 Compost organic waste. Avoid landfill disposal."
 
     # ---------------- METAL ----------------
-    if any(x in label for x in ["can", "aluminum", "metal"]):
-        return (
-            "🥫 Rinse and crush lightly. Metal is highly recyclable and energy-efficient."
-        )
+    if "can" in label or "metal" in label:
+        return "🥫 Rinse and recycle. Metal is highly reusable."
 
-    # ---------------- UNKNOWN / FALLBACK ----------------
-    return (
-        f"🔍 Detected: {label}. "
-        "Separate into dry waste category. Avoid mixing with wet/organic waste. "
-        "If unsure, follow local municipal recycling rules."
-    )
+    # ---------------- DEFAULT ----------------
+    return f"🔍 Detected: {label}. Sort into dry waste if unsure."

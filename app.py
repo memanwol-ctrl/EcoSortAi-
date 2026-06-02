@@ -193,7 +193,7 @@ with col3:
 
     feedback = st.radio("Was the prediction correct?", ["Yes", "No"])
 
-    if: feedback == "No":
+    if feedback == "No":
         st.error("Thanks! This feedback helps improve the system.")
 
 else:

@@ -10,43 +10,46 @@ from utils.climate import get_carbon_impact
 # -----------------------------
 st.set_page_config(page_title="EcoSort AI", layout="wide")
 
-st.title("🌱 EcoSort AI - Smart Waste & Climate Assistant")
-st.write("Upload or capture an image to analyze waste and environmental impact.")
+st.title("🌱 EcoSort AI")
+st.write("AI-powered waste classification with climate impact insights")
 
 st.divider()
 
 # -----------------------------
-# SIDEBAR STATS
+# SESSION STATE INIT
+# -----------------------------
+if "scan_count" not in st.session_state:
+    st.session_state.scan_count = 0
+
+if "last_image_hash" not in st.session_state:
+    st.session_state.last_image_hash = None
+
+# -----------------------------
+# SIDEBAR DASHBOARD
 # -----------------------------
 with st.sidebar:
     st.header("📊 Dashboard")
-
-    if "count" not in st.session_state:
-        st.session_state.count = 0
-
-    st.session_state.count += 1
-
-    st.metric("Total Scans", st.session_state.count)
+    st.metric("Total Scans", st.session_state.scan_count)
 
     st.markdown("---")
-    st.info("AI-powered waste classification + climate impact analysis")
+    st.info("Upload or capture waste images for AI analysis")
 
 # -----------------------------
 # INPUT MODE (FIXED CAMERA ISSUE)
 # -----------------------------
 st.subheader("📤 Input Section")
 
-mode = st.radio("Choose Input Mode:", ["Upload Image", "Use Camera"])
+mode = st.radio("Choose input method:", ["Upload", "Camera"])
 
 image = None
 
-if mode == "Upload Image":
+if mode == "Upload":
     uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
     if uploaded_file:
         image = Image.open(uploaded_file)
 
-elif mode == "Use Camera":
+elif mode == "Camera":
     camera_img = st.camera_input("Take a picture")
 
     if camera_img:
@@ -55,17 +58,15 @@ elif mode == "Use Camera":
 st.divider()
 
 # -----------------------------
-# MAIN LOGIC
+# MAIN PROCESSING
 # -----------------------------
 if image:
 
-    # IMAGE DISPLAY
-    st.subheader("🖼️ Input Image")
+    st.subheader("🖼️ Input Preview")
     st.image(image, use_container_width=True)
 
     st.divider()
 
-    # AI ANALYSIS
     st.subheader("🤖 AI Analysis")
 
     with st.spinner("Analyzing image..."):
@@ -75,9 +76,18 @@ if image:
     confidence = top1["score"]
 
     # -----------------------------
-    # TOP 3 PREDICTIONS
+    # REAL SCAN TRACKING FIX
     # -----------------------------
-    st.markdown("### 🔍 Top Predictions")
+    image_id = str(image.tobytes()[:50])
+
+    if st.session_state.last_image_hash != image_id:
+        st.session_state.scan_count += 1
+        st.session_state.last_image_hash = image_id
+
+    # -----------------------------
+    # TOP 3 RESULTS
+    # -----------------------------
+    st.markdown("### 🔍 Prediction Breakdown")
 
     for r in top3:
         st.progress(float(r["score"]))
@@ -86,20 +96,23 @@ if image:
     st.divider()
 
     # -----------------------------
-    # FINAL RESULT
+    # FINAL RESULT CARD
     # -----------------------------
     st.markdown("## ♻️ Final Result")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.success(f"{label}")
+        st.success(label)
 
     with col2:
         st.metric("Confidence", f"{confidence:.2f}")
 
-    if confidence < 0.6:
-        st.warning("⚠️ Low confidence — try a clearer image")
+    with col3:
+        if confidence < 0.6:
+            st.warning("Low confidence")
+        else:
+            st.success("High confidence")
 
     st.divider()
 
@@ -112,18 +125,18 @@ if image:
     st.divider()
 
     # -----------------------------
-    # 🌍 CLIMATE IMPACT (FIXED)
+    # 🌍 CLIMATE IMPACT
     # -----------------------------
     carbon = get_carbon_impact(label)
 
     st.markdown("## 🌍 Climate Impact")
 
-    col1, col2, col3 = st.columns(3)
+    c1, c2, c3 = st.columns(3)
 
-    with col1:
+    with c1:
         st.metric("CO₂ Impact", f"{carbon} kg")
 
-    with col2:
+    with c2:
         if carbon <= 0.05:
             st.success("Low Impact 🌱")
         elif carbon <= 0.15:
@@ -131,19 +144,19 @@ if image:
         else:
             st.error("High Impact 🔥")
 
-    with col3:
+    with c3:
         st.info("Estimated environmental footprint")
 
     st.divider()
 
     # -----------------------------
-    # EXPLANATION
+    # AI EXPLANATION
     # -----------------------------
     st.markdown("## 🧠 AI Explanation")
 
     st.write(
-        f"The AI detected patterns similar to **{label.lower()}** "
-        "based on shape, texture, and object features learned during training."
+        f"The model identified this as **{label.lower()}** "
+        "based on learned visual patterns like shape and texture."
     )
 
     st.divider()
@@ -157,14 +170,14 @@ if image:
     st.divider()
 
     # -----------------------------
-    # FEEDBACK
+    # FEEDBACK SYSTEM
     # -----------------------------
     st.markdown("## 📊 Feedback")
 
-    feedback = st.radio("Was the prediction correct?", ["Yes", "No"])
+    feedback = st.radio("Was prediction correct?", ["Yes", "No"])
 
     if feedback == "No":
-        st.warning("Thanks for your feedback — it helps improve the system.")
+        st.warning("Thanks for feedback — helps improve model accuracy")
 
 else:
-    st.info("👆 Upload or capture an image to start analysis.")
+    st.info("👆 Upload or capture an image to start analysis")

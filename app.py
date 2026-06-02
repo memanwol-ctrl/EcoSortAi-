@@ -10,19 +10,19 @@ from utils.climate import get_carbon_impact
 # -----------------------------
 st.set_page_config(page_title="EcoSort AI", layout="wide")
 
-st.title("🌱 EcoSort AI")
-st.write("AI-powered waste classification with climate impact insights")
+st.title("🌱 EcoSort AI — Waste & Climate Intelligence")
+st.write("Upload or capture waste images for AI classification and environmental insights.")
 
 st.divider()
 
 # -----------------------------
-# SESSION STATE INIT
+# SESSION STATE (SAFE SCAN TRACKING)
 # -----------------------------
 if "scan_count" not in st.session_state:
     st.session_state.scan_count = 0
 
-if "last_image_hash" not in st.session_state:
-    st.session_state.last_image_hash = None
+if "last_image_id" not in st.session_state:
+    st.session_state.last_image_id = None
 
 # -----------------------------
 # SIDEBAR DASHBOARD
@@ -30,30 +30,26 @@ if "last_image_hash" not in st.session_state:
 with st.sidebar:
     st.header("📊 Dashboard")
     st.metric("Total Scans", st.session_state.scan_count)
-
-    st.markdown("---")
-    st.info("Upload or capture waste images for AI analysis")
+    st.info("AI detects waste type + recycling + climate impact")
 
 # -----------------------------
-# INPUT MODE (FIXED CAMERA ISSUE)
+# INPUT SECTION (FIXED CAMERA ISSUE)
 # -----------------------------
 st.subheader("📤 Input Section")
 
-mode = st.radio("Choose input method:", ["Upload", "Camera"])
+mode = st.radio("Choose input method:", ["Upload Image", "Use Camera"])
 
 image = None
 
-if mode == "Upload":
-    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
+if mode == "Upload Image":
+    file = st.file_uploader("Upload image", type=["jpg", "png", "jpeg"])
+    if file:
+        image = Image.open(file)
 
-    if uploaded_file:
-        image = Image.open(uploaded_file)
-
-elif mode == "Camera":
-    camera_img = st.camera_input("Take a picture")
-
-    if camera_img:
-        image = Image.open(camera_img)
+elif mode == "Use Camera":
+    cam = st.camera_input("Capture image")
+    if cam:
+        image = Image.open(cam)
 
 st.divider()
 
@@ -62,27 +58,27 @@ st.divider()
 # -----------------------------
 if image:
 
-    st.subheader("🖼️ Input Preview")
+    st.subheader("🖼️ Image Preview")
     st.image(image, use_container_width=True)
 
     st.divider()
 
     st.subheader("🤖 AI Analysis")
 
-    with st.spinner("Analyzing image..."):
+    with st.spinner("Analyzing waste type..."):
         top1, top3 = predict_image(image)
 
     label = top1["label"]
     confidence = top1["score"]
 
     # -----------------------------
-    # REAL SCAN TRACKING FIX
+    # REAL SCAN TRACKING (FIXED)
     # -----------------------------
-    image_id = str(image.tobytes()[:50])
+    image_id = str(image.tobytes()[:60])
 
-    if st.session_state.last_image_hash != image_id:
+    if st.session_state.last_image_id != image_id:
         st.session_state.scan_count += 1
-        st.session_state.last_image_hash = image_id
+        st.session_state.last_image_id = image_id
 
     # -----------------------------
     # TOP 3 RESULTS
@@ -96,11 +92,11 @@ if image:
     st.divider()
 
     # -----------------------------
-    # FINAL RESULT CARD
+    # FINAL RESULT
     # -----------------------------
     st.markdown("## ♻️ Final Result")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
         st.success(label)
@@ -108,16 +104,13 @@ if image:
     with col2:
         st.metric("Confidence", f"{confidence:.2f}")
 
-    with col3:
-        if confidence < 0.6:
-            st.warning("Low confidence")
-        else:
-            st.success("High confidence")
+    if confidence < 0.6:
+        st.warning("⚠️ Low confidence — try a clearer image")
 
     st.divider()
 
     # -----------------------------
-    # RECYCLING ADVICE
+    # RECYCLING ADVICE (IMPROVED SOURCE)
     # -----------------------------
     st.markdown("## 💡 Recycling Advice")
     st.info(get_advice(label))
@@ -150,14 +143,16 @@ if image:
     st.divider()
 
     # -----------------------------
-    # AI EXPLANATION
+    # AI EXPLANATION (CLEANED)
     # -----------------------------
     st.markdown("## 🧠 AI Explanation")
 
     st.write(
-        f"The model identified this as **{label.lower()}** "
-        "based on learned visual patterns like shape and texture."
+        f"This object was classified as **{label}** because the model detected "
+        "visual similarities in shape, texture, and structure compared to training data."
     )
+
+    st.info("💡 Tip: clearer lighting improves accuracy significantly.")
 
     st.divider()
 
@@ -174,10 +169,10 @@ if image:
     # -----------------------------
     st.markdown("## 📊 Feedback")
 
-    feedback = st.radio("Was prediction correct?", ["Yes", "No"])
+    feedback = st.radio("Was this prediction correct?", ["Yes", "No"])
 
     if feedback == "No":
-        st.warning("Thanks for feedback — helps improve model accuracy")
+        st.warning("Thanks — your feedback helps improve the system.")
 
 else:
     st.info("👆 Upload or capture an image to start analysis")

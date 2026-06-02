@@ -1,3 +1,4 @@
+from utils.climate import get_carbon_impact
 import streamlit as st
 from PIL import Image
 
@@ -107,6 +108,7 @@ if image:
 
         label = top1["label"]
         confidence = top1["score"]
+        carbon = get_carbon_impact(label)
 
         st.markdown("#### 🔍 Top Predictions")
 
@@ -144,6 +146,23 @@ if image:
             st.success("High Confidence")
 
     st.markdown("---")
+    st.markdown("## 🌍 Climate Impact")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric("CO₂ Impact", f"{carbon} kg")
+
+with col2:
+    if carbon <= 0.05:
+        st.success("Low Impact 🌱")
+    elif carbon <= 0.15:
+        st.warning("Medium Impact 🌿")
+    else:
+        st.error("High Impact 🔥")
+
+with col3:
+    st.info("Estimate based on material type")
 
     # RECYCLING ADVICE CARD
     st.markdown("## 💡 Recycling Insight")

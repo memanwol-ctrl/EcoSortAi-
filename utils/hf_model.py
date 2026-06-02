@@ -1,12 +1,12 @@
 from transformers import pipeline
+from utils.cache import load_model
 
-classifier = pipeline(
-    "image-classification",
-    model="google/vit-base-patch16-224"
-)
+classifier = load_model()
 
 def predict_image(image):
     results = classifier(image)
-    top = results[0]
 
-    return top["label"], float(top["score"])
+    top1 = results[0]
+    top3 = results[:3]
+
+    return top1, top3

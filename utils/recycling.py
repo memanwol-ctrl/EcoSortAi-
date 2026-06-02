@@ -2,38 +2,30 @@ def get_advice(label, confidence=None):
 
     label = label.lower()
 
-    # LOW CONFIDENCE SAFETY CHECK
     if confidence is not None and confidence < 0.5:
-        return "⚠️ Low confidence detection. Please retake a clearer image."
+        return "⚠️ Low confidence. Please retake image."
 
-    # ---------------- PLASTIC ----------------
     if "plastic bottle" in label:
-        return "♻️ Rinse bottle, remove cap, recycle in PET bin."
+        return "♻️ Rinse and recycle in PET bin."
 
-    if "plastic cup" in label:
-        return "⚠️ Plastic cups often NOT recyclable (check PP5 symbol)."
+    if "glass bottle" in label:
+        return "🍾 Rinse and recycle as glass waste."
 
-    if "plastic" in label:
-        return "♻️ Identify resin code (1–7). PET & HDPE are recyclable."
-
-    # ---------------- GLASS ----------------
-    if "glass bottle" in label or "glass jar" in label:
-        return "🍾 Rinse and recycle in glass bin. Separate by color if possible."
-
-    if "glass" in label:
-        return "⚠️ Handle carefully. Do not mix with ceramics."
-
-    # ---------------- PAPER ----------------
     if "paper" in label or "cardboard" in label:
-        return "📦 Keep dry. Remove tape/plastic before recycling."
+        return "📦 Keep dry and recycle."
 
-    # ---------------- ORGANIC ----------------
-    if "food" in label or "fruit" in label:
-        return "🌱 Compost organic waste. Avoid landfill disposal."
+    if "food" in label or "organic" in label:
+        return "🌱 Compost organic waste."
 
-    # ---------------- METAL ----------------
-    if "can" in label or "metal" in label:
-        return "🥫 Rinse and recycle. Metal is highly reusable."
+    return f"🔍 Detected: {label}. Sort into dry waste."
 
-    # ---------------- DEFAULT ----------------
-    return f"🔍 Detected: {label}. Sort into dry waste if unsure."
+
+def local_guide():
+    return """
+🌍 Local Recycling Guide:
+
+- Separate wet and dry waste
+- Do not burn plastic
+- Recycle bottles and cans properly
+- Compost organic waste when possible
+"""

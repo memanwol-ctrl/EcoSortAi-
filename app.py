@@ -1,5 +1,7 @@
 import streamlit as st
 from PIL import Image
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from utils.clip_model import predict_waste_clip
 from utils.recycling import get_advice, local_guide
@@ -7,10 +9,10 @@ from utils.climate import get_carbon_impact
 from utils.report import generate_pdf_report
 
 # ---------------- PAGE SETUP ----------------
-st.set_page_config(page_title="EcoSort AI", layout="wide")
+st.set_page_config(page_title="EcoSort AI Dashboard", layout="wide")
 
-st.title("🌍 EcoSort AI — Impact Tracker System")
-st.write("Track waste, CO₂ impact, and your environmental progress.")
+st.title("🌍 EcoSort AI — Eco Analytics Dashboard")
+st.write("Track waste, CO₂ impact, and environmental behavior over time.")
 
 st.divider()
 
@@ -21,6 +23,9 @@ if "scan_count" not in st.session_state:
 if "total_co2" not in st.session_state:
     st.session_state.total_co2 = 0
 
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 if "waste_breakdown" not in st.session_state:
     st.session_state.waste_breakdown = {
         "plastic": 0,
@@ -30,23 +35,16 @@ if "waste_breakdown" not in st.session_state:
         "organic": 0
     }
 
-if "last_image" not in st.session_state:
-    st.session_state.last_image = None
-
-# ---------------- SIDEBAR DASHBOARD ----------------
+# ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.header("🌍 Eco Mission")
 
     st.metric("Total Scans", st.session_state.scan_count)
     st.metric("Total CO₂ (kg)", round(st.session_state.total_co2, 2))
 
-    progress = min(st.session_state.scan_count / 20, 1.0)
-    st.progress(progress)
+    st.progress(min(st.session_state.scan_count / 20, 1.0))
 
-    if progress < 1:
-        st.info("Goal: 20 scans → Unlock Eco Report")
-    else:
-        st.success("🎉 Eco Report Unlocked")
+    st.write("🎯 Goal: 20 scans unlocks Eco Report")
 
 # ---------------- INPUT ----------------
 st.subheader("📸 Upload or Capture Waste Image")
@@ -67,7 +65,7 @@ elif mode == "Camera":
 
 st.divider()
 
-# ---------------- MAIN LOGIC ----------------
+# ---------------- MAIN PROCESSING ----------------
 if image:
 
     st.image(image, use_container_width=True)
@@ -79,53 +77,48 @@ if image:
     label = top1["label"]
     confidence = top1["score"]
 
-    # ---------------- IMPACT SCORE ----------------
+    # ---------------- CATEGORY ----------------
     if "plastic" in label:
-        impact_score = 8
         category = "plastic"
+        impact_score = 8
     elif "metal" in label:
-        impact_score = 5
         category = "metal"
+        impact_score = 5
     elif "glass" in label:
-        impact_score = 4
         category = "glass"
+        impact_score = 4
     elif "paper" in label:
-        impact_score = 2
         category = "paper"
+        impact_score = 2
     else:
-        impact_score = 6
         category = "organic"
+        impact_score = 6
 
     carbon = get_carbon_impact(label)
 
-    # ---------------- UPDATE STATS ----------------
+    # ---------------- UPDATE STATE ----------------
     st.session_state.scan_count += 1
     st.session_state.total_co2 += carbon
     st.session_state.waste_breakdown[category] += 1
 
+    st.session_state.history.append({
+        "label": label,
+        "category": category,
+        "co2": carbon
+    })
+
     # ---------------- RESULT ----------------
-    st.markdown("## 🔍 Result")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.success(label)
-
-    with col2:
-        st.metric("Confidence", f"{confidence:.2f}")
-
-    if confidence < 0.5:
-        st.warning("⚠️ Low confidence — retake image")
+    st.success(f"Detected: {label}")
+    st.metric("Confidence", f"{confidence:.2f}")
 
     st.divider()
 
     # ---------------- IMPACT ----------------
-    st.markdown("## 🌍 Impact Score")
-
+    st.subheader("🌍 Impact Score")
     st.progress(impact_score / 10)
 
     if impact_score <= 3:
-        st.success("Low environmental impact 🌱")
+        st.success("Low impact 🌱")
     elif impact_score <= 6:
         st.warning("Medium impact ⚠️")
     else:
@@ -133,53 +126,70 @@ if image:
 
     st.divider()
 
-    # ---------------- RECYCLING ADVICE ----------------
-    st.markdown("## ♻️ Recycling Advice")
+    # ---------------- RECYCLING ----------------
+    st.subheader("♻️ Recycling Advice")
     st.info(get_advice(label, confidence))
 
     st.divider()
 
     # ---------------- CO2 ----------------
-    st.markdown("## 🌍 CO₂ Footprint")
+    st.subheader("🌍 CO₂ Impact")
     st.metric("CO₂ (kg)", round(carbon, 2))
 
     st.divider()
 
-    # ---------------- PROGRESS STORY ----------------
-    st.markdown("## 🌱 Your Impact Story")
+    # ---------------- HISTORY PREVIEW ----------------
+    st.subheader("📊 Recent Activity")
 
-    if impact_score <= 3:
-        st.success("Great choice 🌱 low environmental damage")
-    elif impact_score <= 6:
-        st.warning("Moderate impact ⚠️ try reducing waste")
-    else:
-        st.error("High impact 🔥 consider alternatives")
+    st.write(pd.DataFrame(st.session_state.history[-5:]))
 
     st.divider()
-
-    # ---------------- TOP 3 ----------------
-    st.markdown("## 🔍 Other Possibilities")
-
-    for r in top3:
-        st.write(f"{r['label']} — {r['score']:.2f}")
-
-    st.divider()
-
-    # ---------------- LOCAL GUIDE ----------------
-    st.markdown("## 🌍 Local Guide")
-    st.info(local_guide())
 
 else:
-    st.info("👆 Upload or capture an image to begin analysis")
+    st.info("Upload or capture an image to start analysis")
+
+# =====================================================
+# 📊 ANALYTICS DASHBOARD
+# =====================================================
 
 st.divider()
+st.header("📊 Waste Analytics Dashboard")
 
-# ---------------- ECO REPORT ----------------
-st.subheader("📄 Eco Report System")
+if st.session_state.history:
+
+    df = pd.DataFrame(st.session_state.history)
+
+    # ---------------- PIE CHART ----------------
+    st.subheader("🥧 Waste Type Distribution")
+
+    fig1, ax1 = plt.subplots()
+    df["category"].value_counts().plot(kind="pie", autopct="%1.1f%%", ax=ax1)
+    ax1.set_ylabel("")
+    st.pyplot(fig1)
+
+    # ---------------- CO2 TREND ----------------
+    st.subheader("📈 CO₂ Trend Over Time")
+
+    fig2, ax2 = plt.subplots()
+    df["co2"].cumsum().plot(ax=ax2, marker="o")
+    ax2.set_title("Cumulative CO₂ Impact")
+    ax2.set_xlabel("Scan Number")
+    ax2.set_ylabel("CO₂ (kg)")
+    st.pyplot(fig2)
+
+else:
+    st.info("No data yet. Start scanning to generate analytics.")
+
+# =====================================================
+# 📄 ECO REPORT SECTION
+# =====================================================
+
+st.divider()
+st.header("📄 Eco Report System")
 
 eco_score = max(0, 100 - st.session_state.total_co2 * 2)
 
-st.write(f"🌱 Eco Score: {round(eco_score, 2)}/100")
+st.metric("Eco Score", round(eco_score, 2))
 
 if st.session_state.scan_count >= 10:
 
@@ -190,7 +200,8 @@ if st.session_state.scan_count >= 10:
             "co2": round(st.session_state.total_co2, 2),
             "eco_score": round(eco_score, 2),
             "breakdown": st.session_state.waste_breakdown,
-            "suggestions": "Reduce plastic usage, separate waste properly, and reuse materials where possible."
+            "suggestions": "Reduce plastic usage, recycle more, and avoid single-use materials.",
+            "history": st.session_state.history
         }
 
         file = generate_pdf_report(data)
@@ -203,4 +214,4 @@ if st.session_state.scan_count >= 10:
             )
 
 else:
-    st.info("Do at least 10 scans to unlock Eco Report 📊")
+    st.info("Do 10 scans to unlock Eco Report 📄")

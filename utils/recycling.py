@@ -1,30 +1,29 @@
-def map_waste(label: str):
+def get_advice(label):
+
     label = label.lower()
 
-    if any(x in label for x in ["bottle", "plastic", "bag", "container"]):
-        return "Plastic Waste ♻️"
+    if "plastic" in label or "bottle" in label:
+        return "♻️ Clean before recycling. Remove caps if possible."
 
     elif "glass" in label:
-        return "Glass Waste ♻️"
+        return "⚠️ Handle carefully. Send to glass recycling."
 
-    elif any(x in label for x in ["paper", "book", "cardboard"]):
-        return "Paper Waste ♻️"
+    elif "paper" in label:
+        return "📄 Keep dry. Recycle with paper waste."
 
-    elif any(x in label for x in ["food", "banana", "fruit", "vegetable"]):
-        return "Organic Waste 🌱"
+    elif "food" in label or "fruit" in label:
+        return "🌱 Compost organic waste."
 
     else:
-        return "General Waste ❓"
+        return "❓ Check local recycling guidelines."
 
 
-def get_advice(category):
-    if category == "Plastic Waste ♻️":
-        return "Clean it, remove liquid, and put in plastic recycling bin."
-    elif category == "Glass Waste ♻️":
-        return "Do not break it. Send to glass recycling center."
-    elif category == "Paper Waste ♻️":
-        return "Keep dry and recycle with paper waste."
-    elif category == "Organic Waste 🌱":
-        return "Compost it if possible."
-    else:
-        return "Check local waste management guidelines."
+def local_guide():
+    return """
+♻️ Local Waste Tips (Pakistan):
+
+- Do not mix wet and dry waste
+- Plastic burning is harmful
+- Separate glass and metal
+- Compost organic waste if possible
+"""

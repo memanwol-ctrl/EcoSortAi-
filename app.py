@@ -113,7 +113,7 @@ if image:
     # RECYCLING ADVICE (IMPROVED SOURCE)
     # -----------------------------
     st.markdown("## 💡 Recycling Advice")
-    st.info(get_advice(label))
+    st.info(get_advice(label, confidence))
 
     st.divider()
 

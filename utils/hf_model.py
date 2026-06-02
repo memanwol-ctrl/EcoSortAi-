@@ -1,12 +1,4 @@
-from transformers import pipeline
-from utils.cache import load_model
-
-classifier = load_model()
+from utils.clip_model import predict_waste_clip
 
 def predict_image(image):
-    results = classifier(image)
-
-    top1 = results[0]
-    top3 = results[:3]
-
-    return top1, top3
+    return predict_waste_clip(image)

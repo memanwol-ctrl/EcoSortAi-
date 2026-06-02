@@ -46,25 +46,46 @@ with st.sidebar:
 # -----------------------------
 # INPUT MODE
 # -----------------------------
-st.subheader("📤 Upload or Capture")
+st.subheader("📤 Input Mode")
 
-col1, col2 = st.columns(2)
+# -----------------------------
+# MODE CONTROL (IMPORTANT FIX)
+# -----------------------------
+if "mode" not in st.session_state:
+    st.session_state.mode = "upload"
 
-with col1:
-    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
+colA, colB = st.columns(2)
 
-with col2:
-    camera_img = st.camera_input("Take Photo")
+with colA:
+    if st.button("📁 Upload Image"):
+        st.session_state.mode = "upload"
+
+with colB:
+    if st.button("📸 Use Camera"):
+        st.session_state.mode = "camera"
+
+st.write(f"Current mode: **{st.session_state.mode}**")
 
 image = None
 
-if uploaded_file:
-    image = Image.open(uploaded_file)
+# -----------------------------
+# UPLOAD MODE
+# -----------------------------
+if st.session_state.mode == "upload":
+    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
-elif camera_img:
-    image = Image.open(camera_img)
+    if uploaded_file:
+        image = Image.open(uploaded_file)
 
-st.markdown("---")
+# -----------------------------
+# CAMERA MODE (ONLY WHEN SELECTED)
+# -----------------------------
+elif st.session_state.mode == "camera":
+    camera_img = st.camera_input("Take a photo")
+
+    # IMPORTANT: only trigger once image exists
+    if camera_img:
+        image = Image.open(camera_img)
 
 # -----------------------------
 # MAIN APP FLOW

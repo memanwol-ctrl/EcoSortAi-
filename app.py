@@ -9,131 +9,157 @@ from utils.recycling import get_advice, local_guide
 # -----------------------------
 st.set_page_config(
     page_title="EcoSort AI",
+    page_icon="♻️",
     layout="wide"
 )
 
-st.title("🌱 EcoSort AI - Smart Waste Intelligence System")
-st.write("Upload or capture an image to analyze waste and get recycling guidance.")
+# -----------------------------
+# HEADER (STARTUP STYLE)
+# -----------------------------
+st.markdown("""
+    <div style="text-align:center; padding: 10px;">
+        <h1>♻️ EcoSort AI</h1>
+        <p style="font-size:18px; color:gray;">
+        Smart Waste Classification & Recycling Assistant
+        </p>
+    </div>
+""", unsafe_allow_html=True)
 
-st.divider()
+st.markdown("---")
 
 # -----------------------------
-# ANALYTICS
+# SIDEBAR DASHBOARD
 # -----------------------------
-if "count" not in st.session_state:
-    st.session_state.count = 0
+with st.sidebar:
+    st.title("📊 Dashboard")
 
-st.session_state.count += 1
+    if "count" not in st.session_state:
+        st.session_state.count = 0
 
-st.metric("Images Analyzed", st.session_state.count)
+    st.session_state.count += 1
 
-st.divider()
+    st.metric("Scans Today", st.session_state.count)
+
+    st.markdown("---")
+    st.info("Upload or capture waste images to classify and get recycling advice.")
 
 # -----------------------------
-# INPUT SECTION (FIXED CAMERA UX)
+# INPUT MODE
 # -----------------------------
-st.subheader("📤 Input Section")
+st.subheader("📤 Upload or Capture")
 
-use_camera = st.checkbox("📸 Use Camera Instead of Upload")
+col1, col2 = st.columns(2)
+
+with col1:
+    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
+
+with col2:
+    camera_img = st.camera_input("Take Photo")
 
 image = None
 
-if use_camera:
-    camera_img = st.camera_input("Take a picture")
+if uploaded_file:
+    image = Image.open(uploaded_file)
 
-    if camera_img:
-        image = Image.open(camera_img)
+elif camera_img:
+    image = Image.open(camera_img)
 
-else:
-    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
-
-    if uploaded_file:
-        image = Image.open(uploaded_file)
-
-st.divider()
+st.markdown("---")
 
 # -----------------------------
-# MAIN ANALYSIS FLOW
+# MAIN APP FLOW
 # -----------------------------
 if image:
 
-    st.subheader("🖼️ Uploaded Image")
-    st.image(image, use_container_width=True)
-
-    st.subheader("📊 AI Analysis")
-
-    with st.spinner("Analyzing image using AI model..."):
-        top1, top3 = predict_image(image)
-
-    label = top1["label"]
-    confidence = top1["score"]
-
-    # -----------------------------
-    # TOP 3 PREDICTIONS
-    # -----------------------------
-    st.markdown("### 🔍 Prediction Breakdown")
-
-    for r in top3:
-        st.progress(float(r["score"]))
-        st.write(f"**{r['label']}** — {r['score']:.2f}")
-
-    st.divider()
-
-    # -----------------------------
-    # FINAL RESULT (CLEAN UI)
-    # -----------------------------
-    st.markdown("## ♻️ Final Result")
-
-    col1, col2 = st.columns(2)
+    # IMAGE PREVIEW + ANALYSIS PANEL
+    col1, col2 = st.columns([1, 1])
 
     with col1:
-        st.success(f"{label}")
+        st.markdown("### 🖼️ Input Image")
+        st.image(image, use_container_width=True)
 
     with col2:
-        st.metric("Confidence", f"{confidence:.2f}")
+        st.markdown("### 🤖 AI Analysis")
 
-    if confidence < 0.6:
-        st.warning("⚠️ Low confidence — try a clearer image")
+        with st.spinner("AI is analyzing the image..."):
+            top1, top3 = predict_image(image)
 
-    st.divider()
+        label = top1["label"]
+        confidence = top1["score"]
 
-    # -----------------------------
-    # RECYCLING ADVICE
-    # -----------------------------
-    st.markdown("## 💡 Recycling Advice")
-    st.info(get_advice(label))
+        st.markdown("#### 🔍 Top Predictions")
 
-    st.divider()
+        for r in top3:
+            st.progress(float(r["score"]))
+            st.write(f"**{r['label']}** — `{r['score']:.2f}`")
 
-    # -----------------------------
-    # AI EXPLANATION
-    # -----------------------------
+    st.markdown("---")
+
+    # RESULT CARD
+    st.markdown("## ♻️ Result")
+
+    result_col1, result_col2, result_col3 = st.columns(3)
+
+    with result_col1:
+        st.markdown("""
+        <div style="padding:15px; border-radius:10px; background-color:#1f1f1f;">
+            <h3>Prediction</h3>
+            <p style="font-size:18px;">{}</p>
+        </div>
+        """.format(label), unsafe_allow_html=True)
+
+    with result_col2:
+        st.markdown("""
+        <div style="padding:15px; border-radius:10px; background-color:#1f1f1f;">
+            <h3>Confidence</h3>
+            <p style="font-size:18px;">{:.2f}</p>
+        </div>
+        """.format(confidence), unsafe_allow_html=True)
+
+    with result_col3:
+        if confidence < 0.6:
+            st.warning("Low Confidence")
+        else:
+            st.success("High Confidence")
+
+    st.markdown("---")
+
+    # RECYCLING ADVICE CARD
+    st.markdown("## 💡 Recycling Insight")
+
+    st.success(get_advice(label))
+
+    st.markdown("---")
+
+    # EXPLANATION SECTION
     st.markdown("## 🧠 AI Explanation")
 
-    st.write(
+    st.info(
         f"The model detected visual patterns similar to **{label.lower()}** "
-        "based on shape, texture, and object features learned during training."
+        "based on shape, texture, and object structure learned from training data."
     )
 
-    st.divider()
+    st.markdown("---")
 
-    # -----------------------------
     # LOCAL GUIDE
-    # -----------------------------
     st.markdown("## 🌍 Local Recycling Guide")
-    st.info(local_guide())
 
-    st.divider()
+    st.warning(local_guide())
 
-    # -----------------------------
+    st.markdown("---")
+
     # FEEDBACK
-    # -----------------------------
     st.markdown("## 📊 Feedback")
 
-    correct = st.radio("Was this prediction correct?", ["Yes", "No"])
+    feedback = st.radio("Was the prediction correct?", ["Yes", "No"])
 
-    if correct == "No":
-        st.warning("Thanks for feedback — this will help improve future versions.")
+    if feedback == "No":
+        st.error("Thanks! This feedback helps improve the system.")
 
 else:
-    st.info("👆 Upload or capture an image to start analysis.")
+    st.markdown("""
+        <div style="text-align:center; padding:40px;">
+            <h3>📸 Upload or Capture an Image to Start</h3>
+            <p style="color:gray;">AI will analyze waste type and suggest recycling steps</p>
+        </div>
+    """, unsafe_allow_html=True)

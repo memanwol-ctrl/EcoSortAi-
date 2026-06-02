@@ -1,178 +1,155 @@
 import streamlit as st
 from PIL import Image
 
-from utils.hf_model import predict_image
+from utils.clip_model import predict_waste_clip
 from utils.recycling import get_advice, local_guide
 from utils.climate import get_carbon_impact
 
-# -----------------------------
-# PAGE CONFIG
-# -----------------------------
-st.set_page_config(page_title="EcoSort AI", layout="wide")
+# ---------------- PAGE CONFIG ----------------
+st.set_page_config(page_title="EcoSort Impact Tracker", layout="wide")
 
-st.title("🌱 EcoSort AI — Waste & Climate Intelligence")
-st.write("Upload or capture waste images for AI classification and environmental insights.")
+st.title("🌍 EcoSort AI — Impact Tracker")
+st.write("Not just classification — track your environmental impact over time.")
 
 st.divider()
 
-# -----------------------------
-# SESSION STATE (SAFE SCAN TRACKING)
-# -----------------------------
+# ---------------- SESSION STATE ----------------
 if "scan_count" not in st.session_state:
     st.session_state.scan_count = 0
 
-if "last_image_id" not in st.session_state:
-    st.session_state.last_image_id = None
+if "total_impact" not in st.session_state:
+    st.session_state.total_impact = 0
 
-# -----------------------------
-# SIDEBAR DASHBOARD
-# -----------------------------
+# ---------------- SIDEBAR (MISSION SYSTEM) ----------------
 with st.sidebar:
-    st.header("📊 Dashboard")
-    st.metric("Total Scans", st.session_state.scan_count)
-    st.info("AI detects waste type + recycling + climate impact")
+    st.header("🌍 Your Eco Mission")
 
-# -----------------------------
-# INPUT SECTION (FIXED CAMERA ISSUE)
-# -----------------------------
-st.subheader("📤 Input Section")
+    st.metric("Scans", st.session_state.scan_count)
+    st.metric("Total Impact Score", st.session_state.total_impact)
 
-mode = st.radio("Choose input method:", ["Upload Image", "Use Camera"])
+    st.write("🎯 Goal: 20 scans = Eco Report Unlock")
+
+    progress = min(st.session_state.scan_count / 20, 1.0)
+    st.progress(progress)
+
+    if progress < 1:
+        st.info("Keep going 🌱 you're building impact awareness")
+    else:
+        st.success("🎉 Eco Report Unlocked!")
+
+# ---------------- INPUT ----------------
+st.subheader("📸 Upload or Capture Waste Image")
+
+mode = st.radio("Choose input:", ["Upload", "Camera"])
 
 image = None
 
-if mode == "Upload Image":
+if mode == "Upload":
     file = st.file_uploader("Upload image", type=["jpg", "png", "jpeg"])
     if file:
         image = Image.open(file)
 
-elif mode == "Use Camera":
-    cam = st.camera_input("Capture image")
+elif mode == "Camera":
+    cam = st.camera_input("Take picture")
     if cam:
         image = Image.open(cam)
 
 st.divider()
 
-# -----------------------------
-# MAIN PROCESSING
-# -----------------------------
+# ---------------- MAIN LOGIC ----------------
 if image:
 
-    st.subheader("🖼️ Image Preview")
     st.image(image, use_container_width=True)
-
-    st.divider()
 
     st.subheader("🤖 AI Analysis")
 
-    with st.spinner("Analyzing waste type..."):
-        top1, top3 = predict_image(image)
+    top1, top3 = predict_waste_clip(image)
 
     label = top1["label"]
     confidence = top1["score"]
 
-    # -----------------------------
-    # REAL SCAN TRACKING (FIXED)
-    # -----------------------------
-    image_id = str(image.tobytes()[:60])
+    # ---------------- IMPACT SYSTEM ----------------
+    if "plastic" in label:
+        impact_score = 8
+    elif "metal" in label:
+        impact_score = 5
+    elif "glass" in label:
+        impact_score = 4
+    elif "paper" in label:
+        impact_score = 2
+    else:
+        impact_score = 6
 
-    if st.session_state.last_image_id != image_id:
-        st.session_state.scan_count += 1
-        st.session_state.last_image_id = image_id
+    # ---------------- UPDATE STATS ----------------
+    st.session_state.scan_count += 1
+    st.session_state.total_impact += impact_score
 
-    # -----------------------------
-    # TOP 3 RESULTS
-    # -----------------------------
-    st.markdown("### 🔍 Prediction Breakdown")
-
-    for r in top3:
-        st.progress(float(r["score"]))
-        st.write(f"**{r['label']}** — {r['score']:.2f}")
-
-    st.divider()
-
-    # -----------------------------
-    # FINAL RESULT
-    # -----------------------------
-    st.markdown("## ♻️ Final Result")
+    # ---------------- RESULTS ----------------
+    st.markdown("## 🔍 Result")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.success(label)
+        st.success(f"{label}")
 
     with col2:
         st.metric("Confidence", f"{confidence:.2f}")
 
-    if confidence < 0.6:
-        st.warning("⚠️ Low confidence — try a clearer image")
+    st.divider()
+
+    # ---------------- IMPACT SECTION ----------------
+    st.markdown("## 🌍 Environmental Impact")
+
+    st.progress(impact_score / 10)
+
+    if impact_score <= 3:
+        st.success("Low Impact 🌱 Good environmental choice")
+    elif impact_score <= 6:
+        st.warning("Medium Impact ⚠️ Try better recycling")
+    else:
+        st.error("High Impact 🔥 Environmental concern")
+
+    st.write(f"Impact Score: {impact_score}/10")
 
     st.divider()
 
-    # -----------------------------
-    # RECYCLING ADVICE (IMPROVED SOURCE)
-    # -----------------------------
-    st.markdown("## 💡 Recycling Advice")
+    # ---------------- RECYCLING ADVICE ----------------
+    st.markdown("## ♻️ Recycling Advice")
     st.info(get_advice(label, confidence))
 
     st.divider()
 
-    # -----------------------------
-    # 🌍 CLIMATE IMPACT
-    # -----------------------------
+    # ---------------- CO2 ----------------
     carbon = get_carbon_impact(label)
 
-    st.markdown("## 🌍 Climate Impact")
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.metric("CO₂ Impact", f"{carbon} kg")
-
-    with c2:
-        if carbon <= 0.05:
-            st.success("Low Impact 🌱")
-        elif carbon <= 0.15:
-            st.warning("Medium Impact 🌿")
-        else:
-            st.error("High Impact 🔥")
-
-    with c3:
-        st.info("Estimated environmental footprint")
+    st.markdown("## 🌍 CO₂ Footprint")
+    st.metric("CO₂ Impact", f"{carbon} kg")
 
     st.divider()
 
-    # -----------------------------
-    # AI EXPLANATION (CLEANED)
-    # -----------------------------
-    st.markdown("## 🧠 AI Explanation")
+    # ---------------- PERSONAL IMPACT MESSAGE ----------------
+    st.markdown("## 🌱 Your Impact Story")
 
-    st.write(
-        f"This object was classified as **{label}** because the model detected "
-        "visual similarities in shape, texture, and structure compared to training data."
-    )
-
-    st.info("💡 Tip: clearer lighting improves accuracy significantly.")
+    if impact_score <= 3:
+        st.success("Great job 🌱 You chose a low-impact item.")
+    elif impact_score <= 6:
+        st.warning("Moderate impact ⚠️ You can improve your waste habits.")
+    else:
+        st.error("High impact detected 🔥 Try reducing plastic usage.")
 
     st.divider()
 
-    # -----------------------------
-    # LOCAL GUIDE
-    # -----------------------------
-    st.markdown("## 🌍 Local Recycling Guide")
+    # ---------------- TOP 3 ----------------
+    st.markdown("## 🔍 Other Possibilities")
+
+    for r in top3:
+        st.write(f"{r['label']} — {r['score']:.2f}")
+
+    st.divider()
+
+    # ---------------- LOCAL GUIDE ----------------
+    st.markdown("## 🌍 Local Guide")
     st.info(local_guide())
 
-    st.divider()
-
-    # -----------------------------
-    # FEEDBACK SYSTEM
-    # -----------------------------
-    st.markdown("## 📊 Feedback")
-
-    feedback = st.radio("Was this prediction correct?", ["Yes", "No"])
-
-    if feedback == "No":
-        st.warning("Thanks — your feedback helps improve the system.")
-
 else:
-    st.info("👆 Upload or capture an image to start analysis")
+    st.info("👆 Upload or capture an image to start your eco impact journey")

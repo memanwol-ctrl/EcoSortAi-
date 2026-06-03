@@ -262,4 +262,4 @@ if st.session_state.scan_count >= 10:
             )
 
 else:
-    st.info("Do 5 scans to unlock Eco Report 📄")
+    st.info("Do 10 scans to unlock Eco Report 📄")

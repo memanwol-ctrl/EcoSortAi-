@@ -101,7 +101,7 @@ if entry_mode == "✍️ Manual Entry":
             })
 
         st.success(f"✅ Added {quantity} {waste_type} item(s)")
-        elif entry_mode == "📸 Scan Waste":
+    elif entry_mode == "📸 Scan Waste":
 
     scan_method = st.radio(
         "Scan Method",

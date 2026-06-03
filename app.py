@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from utils.clip_model import predict_waste_clip
-from utils.recycling import get_advice, local_guide
+from utils.recycling import get_advice
 from utils.climate import get_carbon_impact
 from utils.report import generate_pdf_report
 
@@ -51,29 +51,20 @@ st.subheader("♻️ Add Waste")
 
 entry_mode = st.radio(
     "Choose Method",
-    [
-        "📸 Scan Waste",
-        "✍️ Manual Entry"
-    ]
+    ["📸 Scan Waste", "✍️ Manual Entry"]
 )
+
+image = None
+
+# ================= MANUAL ENTRY =================
 if entry_mode == "✍️ Manual Entry":
 
     waste_type = st.selectbox(
         "Waste Type",
-        [
-            "Plastic",
-            "Metal",
-            "Glass",
-            "Paper",
-            "Organic"
-        ]
+        ["Plastic", "Metal", "Glass", "Paper", "Organic"]
     )
 
-    quantity = st.number_input(
-        "Quantity",
-        min_value=1,
-        value=1
-    )
+    quantity = st.number_input("Quantity", min_value=1, value=1)
 
     if st.button("Add Waste Entry"):
 
@@ -101,31 +92,18 @@ if entry_mode == "✍️ Manual Entry":
             })
 
         st.success(f"✅ Added {quantity} {waste_type} item(s)")
-    elif entry_mode == "📸 Scan Waste":
 
-      scan_method = st.radio(
-        "Scan Method",
-        [
-            "📁 Upload Image",
-            "📷 Camera"
-        ]
-    )
-
-   elif entry_mode == "📸 Scan Waste":
+# ================= SCAN MODE =================
+elif entry_mode == "📸 Scan Waste":
 
     scan_method = st.radio(
         "Scan Method",
         ["📁 Upload Image", "📷 Camera"]
     )
 
-    image = None
-
     if scan_method == "📁 Upload Image":
 
-        uploaded_file = st.file_uploader(
-            "Upload image",
-            type=["jpg", "png", "jpeg"]
-        )
+        uploaded_file = st.file_uploader("Upload image", type=["jpg", "png", "jpeg"])
 
         if uploaded_file:
             image = Image.open(uploaded_file)
@@ -212,15 +190,12 @@ if image:
 
     st.divider()
 
-    # ---------------- HISTORY PREVIEW ----------------
+    # ---------------- HISTORY ----------------
     st.subheader("📊 Recent Activity")
-
     st.write(pd.DataFrame(st.session_state.history[-5:]))
 
-    st.divider()
-
 else:
-    st.info("Upload or capture an image to start analysis")
+    st.info("Upload or use camera OR add waste manually to start")
 
 # =====================================================
 # 📊 ANALYTICS DASHBOARD
@@ -233,17 +208,13 @@ if st.session_state.history:
 
     df = pd.DataFrame(st.session_state.history)
 
-    # ---------------- PIE CHART ----------------
     st.subheader("🥧 Waste Type Distribution")
-
     fig1, ax1 = plt.subplots()
     df["category"].value_counts().plot(kind="pie", autopct="%1.1f%%", ax=ax1)
     ax1.set_ylabel("")
     st.pyplot(fig1)
 
-    # ---------------- CO2 TREND ----------------
     st.subheader("📈 CO₂ Trend Over Time")
-
     fig2, ax2 = plt.subplots()
     df["co2"].cumsum().plot(ax=ax2, marker="o")
     ax2.set_title("Cumulative CO₂ Impact")
@@ -252,10 +223,10 @@ if st.session_state.history:
     st.pyplot(fig2)
 
 else:
-    st.info("No data yet. Start scanning to generate analytics.")
+    st.info("No data yet. Start scanning or adding waste")
 
 # =====================================================
-# 📄 ECO REPORT SECTION
+# 📄 ECO REPORT
 # =====================================================
 
 st.divider()
@@ -269,23 +240,26 @@ if st.session_state.scan_count >= 10:
 
     if st.button("Generate Eco Report PDF"):
 
+        most_common = max(st.session_state.waste_breakdown, key=st.session_state.waste_breakdown.get)
+
         data = {
             "scans": st.session_state.scan_count,
             "co2": round(st.session_state.total_co2, 2),
             "eco_score": round(eco_score, 2),
             "breakdown": st.session_state.waste_breakdown,
-            "suggestions": "Reduce plastic usage, recycle more, and avoid single-use materials.",
-            "history": st.session_state.history
+            "history": st.session_state.history,
+            "most_common": most_common,
+            "suggestions": "Reduce plastic usage, recycle more, and avoid single-use materials."
         }
 
         file = generate_pdf_report(data)
 
         with open(file, "rb") as f:
             st.download_button(
-                "Download Eco Report",
+                "📥 Download Eco Report",
                 f,
                 file_name="eco_report.pdf"
             )
 
 else:
-    st.info("Do 10 scans to unlock Eco Report 📄")
+    st.info("Do 5 scans to unlock Eco Report 📄")

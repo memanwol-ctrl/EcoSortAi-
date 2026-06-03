@@ -111,36 +111,31 @@ if entry_mode == "✍️ Manual Entry":
         ]
     )
 
+   elif entry_mode == "📸 Scan Waste":
+
+    scan_method = st.radio(
+        "Scan Method",
+        ["📁 Upload Image", "📷 Camera"]
+    )
+
+    image = None
+
     if scan_method == "📁 Upload Image":
 
-        file = st.file_uploader(
+        uploaded_file = st.file_uploader(
             "Upload image",
             type=["jpg", "png", "jpeg"]
         )
 
-        if file:
-            image = Image.open(file)
+        if uploaded_file:
+            image = Image.open(uploaded_file)
 
     elif scan_method == "📷 Camera":
 
-        cam = st.camera_input(
-            "Take picture"
-        )
+        camera_file = st.camera_input("Take picture")
 
-        if cam:
-            image = Image.open(cam)
-
-image = None
-
-if entry_mode == "📸 Scan Waste":
-    file = st.file_uploader("Upload image", type=["jpg", "png", "jpeg"])
-    if file:
-        image = Image.open(file)
-
-elif entry_mode == "Camera":
-    cam = st.camera_input("Take picture")
-    if cam:
-        image = Image.open(cam)
+        if camera_file:
+            image = Image.open(camera_file)
 
 st.divider()
 

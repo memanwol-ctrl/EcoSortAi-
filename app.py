@@ -47,9 +47,88 @@ with st.sidebar:
     st.write("🎯 Goal: 20 scans unlocks Eco Report")
 
 # ---------------- INPUT ----------------
-st.subheader("📸 Upload or Capture Waste Image")
+st.subheader("♻️ Add Waste")
 
-mode = st.radio("Input mode:", ["Upload", "Camera"])
+entry_mode = st.radio(
+    "Choose Method",
+    [
+        "📸 Scan Waste",
+        "✍️ Manual Entry"
+    ]
+)
+if entry_mode == "✍️ Manual Entry":
+
+    waste_type = st.selectbox(
+        "Waste Type",
+        [
+            "Plastic",
+            "Metal",
+            "Glass",
+            "Paper",
+            "Organic"
+        ]
+    )
+
+    quantity = st.number_input(
+        "Quantity",
+        min_value=1,
+        value=1
+    )
+
+    if st.button("Add Waste Entry"):
+
+        category = waste_type.lower()
+
+        carbon_values = {
+            "plastic": 6,
+            "metal": 4,
+            "glass": 2,
+            "paper": 1,
+            "organic": 0.5
+        }
+
+        carbon = carbon_values[category] * quantity
+
+        st.session_state.scan_count += quantity
+        st.session_state.total_co2 += carbon
+        st.session_state.waste_breakdown[category] += quantity
+
+        for _ in range(quantity):
+            st.session_state.history.append({
+                "label": waste_type,
+                "category": category,
+                "co2": carbon_values[category]
+            })
+
+        st.success(f"✅ Added {quantity} {waste_type} item(s)")
+        elif entry_mode == "📸 Scan Waste":
+
+    scan_method = st.radio(
+        "Scan Method",
+        [
+            "📁 Upload Image",
+            "📷 Camera"
+        ]
+    )
+
+    if scan_method == "📁 Upload Image":
+
+        file = st.file_uploader(
+            "Upload image",
+            type=["jpg", "png", "jpeg"]
+        )
+
+        if file:
+            image = Image.open(file)
+
+    elif scan_method == "📷 Camera":
+
+        cam = st.camera_input(
+            "Take picture"
+        )
+
+        if cam:
+            image = Image.open(cam)
 
 image = None
 

@@ -132,12 +132,12 @@ if entry_mode == "✍️ Manual Entry":
 
 image = None
 
-if mode == "Upload":
+if entry_mode == "📸 Scan Waste":
     file = st.file_uploader("Upload image", type=["jpg", "png", "jpeg"])
     if file:
         image = Image.open(file)
 
-elif mode == "Camera":
+elif entry_mode == "Camera":
     cam = st.camera_input("Take picture")
     if cam:
         image = Image.open(cam)
